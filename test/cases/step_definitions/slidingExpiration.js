@@ -13,7 +13,20 @@ const XMLHttpRequest = XHR.XMLHttpRequest;
 export const myStepDefinitionsWrapper = function stepDefinition() {
     const browser = Browser.instance;
 
-    let error = false;
+    function getNewToken(decoded, expDate) {
+        return jwt.sign({
+            sub: decoded.sub,
+            role: decoded.role,
+            expDate: new Date().setMinutes(expDate)
+        }, config.jwtSecret);
+    }
+    function checkDateDelta(minutes, decoded, currentServerDate) {
+        const delta = Math.floor((new Date(decoded.expDate) - currentServerDate) / (60 * 1000));
+        if (minutes !== delta) {
+            throw new Error('Тест упал');
+        }
+        return true;
+    }
 
     this.Given(/^I have an empty DB$/, () => {
         console.warn('[x22a] Well it is given');
@@ -62,36 +75,21 @@ export const myStepDefinitionsWrapper = function stepDefinition() {
         }
     });
 
-    this.Then(/^I get valid JWT token with an expiration date of (.*) hours after the current date on the server$/, hours => {
+    this.Then(/^I get a new valid JWT token with an expiration date of (.*) minutes after the current date on the server$/, minutes => {
         // TODO Написать проверку для поля dateExpired
         const decodedToken = jwt.verify(browser.getToken(), config.jwtSecret);
         const currentServerDate = new Date();
-        function checkDateDelta(decoded) {
-            const delta = Math.floor((new Date(decoded.expDate) - currentServerDate) / (60 * 60 * 1000));
-            if (hours !== delta) {
-                throw new Error('Тест упал');
-            }
-            return true;
-        }
-        checkDateDelta(decodedToken);
+        checkDateDelta(minutes, decodedToken, currentServerDate);
     });
 
-    this.Given(/^I have a User$/, () => {
-        console.log('Yeah, User is here'); // а юзер точно есть?
+    this.Given(/^I have a User with checkbox: (.*)$/, checkbox => {
+        console.warn(`user push checkbox: ${checkbox}`); // а юзер точно есть?
     });
 
-    this.And(/^I have a token with an expiration date for 5 days the most current date on the server or equal to it$/, () => {
+    this.And(/^I have a token with an expiration date for (.*) minutes the most current date on the server or equal to it$/, delta => {
         // TODO Написать подмену существующего токена на аналогичный с необходимым значением dateExpired
         const decodedToken = jwt.verify(browser.getToken, config.jwtSecret);
-        const newExpDate = new Date().getHours() + 120; // + 120 часов = 5 суток от настоящего момента
-
-        function getNewToken(decoded, expDate) {
-            return jwt.sign({
-                sub: decoded.sub,
-                role: decoded.role,
-                expDate: new Date().setHours(expDate)
-            }, config.jwtSecret);
-        }
+        const newExpDate = new Date().getMinutes() + delta;
 
         browser.setToken(getNewToken(decodedToken, newExpDate));
     });
@@ -100,21 +98,35 @@ export const myStepDefinitionsWrapper = function stepDefinition() {
         // TODO написать обращение к API
         const xhr = new XMLHttpRequest();
 
-        xhr.open('GET', `http://${config.express.host}:${config.express.port}/api/whatever/`);
-        xhr.setRequestHeader('Content-Type', 'application/json'); // не уверен на счет хедера - в json мне нужно класть данные, которые мне пребстоит обработать, но что обрабатывать на api?
+        xhr.open('GET', `http://${config.express.host}:${config.express.port}/api/v1/echo`);
+        xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.send();
+
+        if (xhr.status !== 200) {
+            throw new Error(`[Bad response] Code: ${xhr.status} Res: ${xhr.responseText}`);
+        } else {
+            browser.setToken(JSON.parse(xhr.responseText).token);
+        }
     });
 
-    this.Then(/^I get new valid JWT token with an expiration date of 30 days after the current date on the server$/, () => {
-        // TODO Написать замену "старого" токена на новый
+    this.Then(/^I get a new valid JWT token with an expiration date of (.*) minutes after the current date on the server$/, minutes => {
+        // TODO Написать проверку нового только что полученного токена
+        const decodedToken = jwt.verify(browser.getToken(), config.jwtSecret);
+        const currentServerDate = new Date();
+
+        checkDateDelta(minutes, decodedToken, currentServerDate);
     });
 
     this.Given(/^I have a User$/, () => {
-        // ????
+        console.warn('User is already here');
     });
 
     this.And(/^I have the expired token$/, () => {
         // TODO Написать подмену существующего токена на аналогичный с необходимым значением dateExpired
+        const decodedToken = jwt.verify(browser.getToken, config.jwtSecret);
+        const newExpDate = new Date().getMinutes() - 1;
+
+        browser.setToken(getNewToken(decodedToken, newExpDate));
     });
 
     this.When(/^I send GET request to the API$/, () => {
