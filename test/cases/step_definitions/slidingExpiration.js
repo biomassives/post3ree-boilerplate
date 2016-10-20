@@ -77,19 +77,19 @@ export const myStepDefinitionsWrapper = function stepDefinition() {
     });
 
     this.Given(/^I have a User$/, () => {
-        console.log('Yeah, User is here');
+        console.log('Yeah, User is here'); // а юзер точно есть?
     });
 
     this.And(/^I have a token with an expiration date for 5 days the most current date on the server or equal to it$/, () => {
         // TODO Написать подмену существующего токена на аналогичный с необходимым значением dateExpired
         const decodedToken = jwt.verify(browser.getToken, config.jwtSecret);
-        const newExpDate = decodedToken.expDate.getDate() + 5;
+        const newExpDate = new Date().getHours() + 120; // + 120 часов = 5 суток от настоящего момента
 
         function getNewToken(decoded, expDate) {
             return jwt.sign({
                 sub: decoded.sub,
                 role: decoded.role,
-                expDate: new Date().setDate(expDate)
+                expDate: new Date().setHours(expDate)
             }, config.jwtSecret);
         }
 
@@ -98,6 +98,11 @@ export const myStepDefinitionsWrapper = function stepDefinition() {
 
     this.When(/^I send GET request to the API$/, () => {
         // TODO написать обращение к API
+        const xhr = new XMLHttpRequest();
+
+        xhr.open('GET', `http://${config.express.host}:${config.express.port}/api/whatever/`);
+        xhr.setRequestHeader('Content-Type', 'application/json'); // не уверен на счет хедера - в json мне нужно класть данные, которые мне пребстоит обработать, но что обрабатывать на api?
+        xhr.send();
     });
 
     this.Then(/^I get new valid JWT token with an expiration date of 30 days after the current date on the server$/, () => {
