@@ -39,10 +39,9 @@ function registerFailure() {
 }
 
 
-export function login(user) {
+export function login(user) { // this user from SignInForm
     return dispatch => {
         dispatch(loginRequest());
-
         return request
             .post(loginUrl)
             .send({ user })

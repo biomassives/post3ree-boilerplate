@@ -150,14 +150,16 @@ const myStepDefinitionsWrapper = function stepDefinition() {
 
         const user = JSON.stringify({ user: {
             username: email,
-            password
+            password,
+            isChecked: false
         }
         });
+
+        console.warn(user);
 
         xhr.open('POST', `http://${config.express.host}:${config.express.port}/openapi/v1/login`, false);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.send(user);
-
         if (xhr.status !== 200) {
             throw new Error(`[Bad response] Code: ${xhr.status} Res: ${xhr.responseText}`);
         } else {

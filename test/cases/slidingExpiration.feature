@@ -8,9 +8,9 @@ Feature: Sliding Expiration
     Then I get a new valid JWT token with an expiration date of <minutes> minutes after the current date on the server
 
     Examples:
-      | minutes | checkbox | email                  | password |
-      | 43200   | false    | se-checkbox@false.test | 121212   |
-      | 60      | true     | se-checkbox@true.test  | yolo123  |
+      | minutes | checkbox   | email                  | password |
+      | 43200   |            | se-checkbox@false.test | 121212   |
+      | 60      | 'checkbox' | se-checkbox@true.test  | yolo123  |
 
   Scenario Outline: User with expiration date near the current is visit site without and with checkbox
     Given I have a User with checkbox: <checkbox>
@@ -28,5 +28,5 @@ Feature: Sliding Expiration
     Given I have a User
     And I have the expired token
     When I send GET request to the API
-    Then I delete token from local storage
+    Then I check
     And I have redirect to Sign In page

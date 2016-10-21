@@ -7,6 +7,7 @@ import s from './signInForm.pcss'
 
 import Input from '../../components/common/Input/Input'
 import Button from '../../components/common/Button/Button'
+import Checkbox from '../../components/common/Checbox/Checkbox'
 
 class SignInForm extends Component {
     constructor(props, context) {
@@ -15,7 +16,8 @@ class SignInForm extends Component {
             email: this.props.email || '',
             password: this.props.password || '',
             emailError: false,
-            passwordError: false
+            passwordError: false,
+            isChecked: false
         };
     }
 
@@ -25,6 +27,12 @@ class SignInForm extends Component {
 
     handlePasswordChange(e) {
         this.setState({ password: e.target.value });
+    }
+
+    handleCheckBoxChange() {
+        this.setState({
+            isChecked: !this.state.isChecked
+        })
     }
 
     handleSubmit(e) {
@@ -53,18 +61,20 @@ class SignInForm extends Component {
         if (!errors) {
             dispatch(login({
                 username: state.email,
-                password: state.password
+                password: state.password,
+                isChecked: state.isChecked
             }));
 
             this.setState({
                 email: '',
-                password: ''
+                password: '',
+                isChecked: false
             })
         }
     }
 
     render() {
-        const { email, emailError, password, passwordError } = this.state;
+        const { email, emailError, password, passwordError, isChecked } = this.state;
 
         return (
             <div className={ s.signInForm }>
@@ -87,6 +97,10 @@ class SignInForm extends Component {
                             onChange={::this.handlePasswordChange}
                             value={ password }
                             err={ passwordError }/>
+                        <Checkbox
+                            text="Это не моё пальто"
+                            value={ isChecked }
+                            onChange={::this.handleCheckBoxChange}/>
                         <Button type="submit">Sign in</Button>
                     </form>
                 </div>
